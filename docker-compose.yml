@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:18-alpine
+    ports:
+      - "5432:5432"
+    restart: always
+    environment:
+      POSTGRES_USER: arthur
+      POSTGRES_PASSWORD: asmajob
+      POSTGRES_DB: asmajob
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
