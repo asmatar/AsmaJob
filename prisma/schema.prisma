@@ -17,29 +17,29 @@ datasource db {
 // ============================================================
 
 enum UserRole {
-    ADMIN
-    RECRUITER
-    MANAGER
+  ADMIN
+  RECRUITER
+  MANAGER
 }
 
 enum JobOfferStatus {
-    DRAFT
-    PUBLISHED
-    CLOSED
-    ARCHIVED
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
 }
 
 enum InterviewStatus {
-    PLANNED
-    DONE
-    CANCELLED
+  PLANNED
+  DONE
+  CANCELLED
 }
 
 enum DocumentType {
-    CV
-    COVER_LETTER
-    CONTRACT
-    OTHER
+  CV
+  COVER_LETTER
+  CONTRACT
+  OTHER
 }
 
 // ============================================================
@@ -47,23 +47,23 @@ enum DocumentType {
 // ============================================================
 
 model Company {
-    id String @id @default(uuid())
-    name	string
-    website	string?
-    industry	string
-    address	string
-    postcode string
-    city string
+  id       String  @id @default(uuid())
+  name     String
+  website  String?
+  industry String
+  address  String
+  postcode String
+  city     String
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    // Relations
-    users         User[]
-    jobOffers     JobOffer[]
-    pipelineStages PipelineStage[]
+  // Relations
+  users          User[]
+  jobOffers      JobOffer[]
+  pipelineStages PipelineStage[]
 
-    @@index([name])
+  @@index([name])
 }
 
 // ============================================================
@@ -71,84 +71,83 @@ model Company {
 // ============================================================
 
 model User {
-    id String @id @default(uuid())
-    company_id string
-    firstname string
-    lastname	string
-    email string
-    password_hash string
-    role	UserRole @default(RECRUITER)
-    is_active timestamp @default(true)
+  id            String   @id @default(uuid())
+  companyId     String
+  firstname     String
+  lastname      String
+  email         String
+  password_hash String
+  role          UserRole @default(RECRUITER)
+  is_active     Boolean  @default(true)
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    //Relation
-    company       Company @relation(fields: [company_id], references:[id])
-    Notifications Notification[]
-    Notes Note[]
-    Interviews Interview[]
+  //Relation
+  company       Company        @relation(fields: [companyId], references: [id])
+  Notifications Notification[]
+  Notes         Note[]
+  Interviews    Interview[]
+  jobOffers     JobOffer[]
 
-    @@unique([companyId, email])
-    @@index([companyId, email])
-    @@index([firstname, lastname])
-    @@index([email])
+  @@unique([companyId, email])
+  @@index([companyId, email])
+  @@index([firstname, lastname])
+  @@index([email])
 }
 
 // ============================================================
 // JOB OFFER
 // ============================================================
 
-model JobOffer{
-    id String @id @default(uuid())
-    companyId   String
+model JobOffer {
+  id           String         @id @default(uuid())
+  companyId    String
+  createdById  String
+  title        String
+  description  String
+  contractType String
+  city         String?
+  country      String?
+  remote       Boolean        @default(false)
+  salaryMin    Int?
+  salaryMax    Int?
+  status       JobOfferStatus @default(DRAFT)
 
-    createdAt     DateTime @default(now())
-    updatedAt     DateTime @updatedAt
-    title         String
-    description   String
-    contractType  String
-    city          String?
-    country       String?
-    remote        Boolean       @default(false)
-    salaryMin     Int?
-    salaryMax     Int?
-    status        JobOfferStatus @default(DRAFT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  // Relations
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy    User          @relation(fields: [createdById], references: [id])
+  applications Application[]
 
-    // Relations
-    company   Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-    createdBy User          @relation(fields: [createdById], references: [id])
-    applications Application[]
-
-    @@index([companyId])
-    @@index([createdById])
-    @@index([status])
+  @@index([companyId])
+  @@index([createdById])
+  @@index([status])
 }
 
 // ============================================================
 // CANDIDATE
 // ============================================================
 
-model Candidate{
-  id           String  @id @default(uuid())
-  firstname    String
-  lastname     String
-  email        String @unique
-  phone        String?
-  linkedinUrl  String?
-  postCode     String?
-  address      String?
-  city         String?
-  country      string?
+model Candidate {
+  id          String  @id @default(uuid())
+  firstname   String
+  lastname    String
+  email       String  @unique
+  phone       String?
+  linkedinUrl String?
+  postCode    String?
+  address     String?
+  city        String?
+  country     String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   //Relations
-  application Applications[]
+  applications Application[]
 
   @@index([email])
   @@index([lastname, firstname])
@@ -158,90 +157,89 @@ model Candidate{
 // APPLICATION
 // ============================================================
 
-model Application{
-    id          String            @id @default(uuid())
-    candidateId String
-    jobOfferId  String
-    stageId     String
+model Application {
+  id          String @id @default(uuid())
+  candidateId String
+  jobOfferId  String
+  stageId     String
 
-    appliedAt DateTime @default(now())
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  appliedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  //Relation
+  jobOffer  JobOffer      @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
+  candidate Candidate     @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  stage     PipelineStage @relation(fields: [stageId], references: [id])
 
-    //Relation
-    jobOffer JobOffer @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
-    candidate Candidate @relation(fields: [candidateId], references : [id], onDelete: Cascade)
-    stage PipelineStage @relation(fields: [stageId], references [id])
+  interviews Interview[]
+  notes      Note[]
+  documents  Document[]
 
-    interviews Interview[]
-    notes Note[]
-    documents Documents[]
-
-    @@index([candidateId])
-    @@index([jobOfferId])
-    @@index([stageId])
+  @@index([candidateId])
+  @@index([jobOfferId])
+  @@index([stageId])
 }
 
 // ============================================================
 // INTERVIEW
 // ============================================================
 
-model Interview{
-    id String @id @default(uuid())
-    applicationId String
-    interviewerId String
-    scheduledAt DateTime
-    duration    Int?
-    location    String?
-    meetingUrl  String?
-    status      InterviewStatus @default(PLANNED)
+model Interview {
+  id            String          @id @default(uuid())
+  applicationId String
+  interviewerId String
+  scheduledAt   DateTime
+  duration      Int?
+  location      String?
+  meetingUrl    String?
+  status        InterviewStatus @default(PLANNED)
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    //Relation
-    interviewer User @relation(fields: [interviewerId], references: [id])
-    application Application @relation(fields: [applicationId], references: [id])
+  //Relation
+  interviewer User        @relation(fields: [interviewerId], references: [id])
+  application Application @relation(fields: [applicationId], references: [id])
 
-    @@index([applicationId])
-    @@index([interviewerId])
-    @@index([scheduledAt])
+  @@index([applicationId])
+  @@index([interviewerId])
+  @@index([scheduledAt])
 }
 
 // ============================================================
 // NOTE
 // ============================================================
 
-model Note{
-    id String @id @default(uuid())
-    authorId String
-    applicationId String
+model Note {
+  id            String @id @default(uuid())
+  authorId      String
+  applicationId String
 
-    //Relation
-    author User @relation(fields: [authorId], references:[id])
-    application Application @relation(fields: [applicationId], references:[id])
+  //Relation
+  author      User        @relation(fields: [authorId], references: [id])
+  application Application @relation(fields: [applicationId], references: [id])
 
-    @@index([applicationId])
-    @@index([authorId])
+  @@index([applicationId])
+  @@index([authorId])
 }
 
 // ============================================================
 // DOCUMENT
 // ============================================================
 
-model Document{
-    id @id @default(uuid())
-    applicationId String
-    filename String
-    fileUrl  String
-    type     DocumentType
-    createdAt DateTime @default(now())
+model Document {
+  id            String       @id @default(uuid())
+  applicationId String
+  filename      String
+  fileUrl       String
+  type          DocumentType
+  createdAt     DateTime     @default(now())
 
-    //Relation
-    application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  //Relation
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
-    @@index([applicationId])
+  @@index([applicationId])
 }
 
 // ============================================================
@@ -249,37 +247,36 @@ model Document{
 // ============================================================
 
 model Notification {
-    id @id @default(uuid())
-    userId String
-    title String
-    content String
-    isRead Boolean @default(false)
+  id      String  @id @default(uuid())
+  userId  String
+  title   String
+  content String
+  isRead  Boolean @default(false)
 
-    createdAt dateTime @default(now())
+  createdAt DateTime @default(now())
 
-    //Relation
-    user User @relation(fields:[userId], references: [id], onDelete: Cascade)
+  //Relation
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    @@index([userId])
-    @@index([userId, isRead])
+  @@index([userId])
+  @@index([userId, isRead])
 }
 
+model PipelineStage {
+  id        String  @id @default(uuid())
+  companyId String
+  name      String
+  position  Int
+  isActive  Boolean @default(true)
 
-model PipelineStage{
-    id        String  @id @default(uuid())
-    companyId String
-    name      String
-    position  Int
-    isActive  Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  //Relation
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  applications Application[]
 
-    //Relation
-    company      Company @relation(fields: [companyId], references: [id], onDelete:Cascade)
-    applications Application[]
-
-    @@unique([companyId, position])
-    @@unique([companyId, name])
-    @@index([companyId])
+  @@unique([companyId, position])
+  @@unique([companyId, name])
+  @@index([companyId])
 }
