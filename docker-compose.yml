@@ -8,8 +8,19 @@ services:
       POSTGRES_USER: arthur
       POSTGRES_PASSWORD: asmajob
       POSTGRES_DB: asmajob
+      PGDATA: /var/lib/postgresql/18/data
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data
+      - ./postgres_data:/var/lib/postgresql/18/data
+
+  backend:
+    build: ./backend
+    container_name: asmajob_backend
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://arthur:asmajob@db:5432/asmajob
+    depends_on:
+      - db
 
 volumes:
   postgres_data:
