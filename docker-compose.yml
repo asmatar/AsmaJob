@@ -19,8 +19,9 @@ services:
       - "3000:3000"
     environment:
       DATABASE_URL: postgresql://arthur:asmajob@db:5432/asmajob
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run start:dev
     depends_on:
       - db
-
-volumes:
-  postgres_data:
