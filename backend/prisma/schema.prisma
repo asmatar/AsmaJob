@@ -1,0 +1,282 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum UserRole {
+  ADMIN
+  RECRUITER
+  MANAGER
+}
+
+enum JobOfferStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+enum InterviewStatus {
+  PLANNED
+  DONE
+  CANCELLED
+}
+
+enum DocumentType {
+  CV
+  COVER_LETTER
+  CONTRACT
+  OTHER
+}
+
+// ============================================================
+// COMPANY
+// ============================================================
+
+model Company {
+  id       String  @id @default(uuid())
+  name     String
+  website  String?
+  industry String
+  address  String
+  postcode String
+  city     String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  users          User[]
+  jobOffers      JobOffer[]
+  pipelineStages PipelineStage[]
+
+  @@index([name])
+}
+
+// ============================================================
+// USER
+// ============================================================
+
+model User {
+  id            String   @id @default(uuid())
+  companyId     String
+  firstname     String
+  lastname      String
+  email         String
+  password_hash String
+  role          UserRole @default(RECRUITER)
+  is_active     Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //Relation
+  company       Company        @relation(fields: [companyId], references: [id])
+  Notifications Notification[]
+  Notes         Note[]
+  Interviews    Interview[]
+  jobOffers     JobOffer[]
+
+  @@unique([companyId, email])
+  @@index([companyId, email])
+  @@index([firstname, lastname])
+  @@index([email])
+}
+
+// ============================================================
+// JOB OFFER
+// ============================================================
+
+model JobOffer {
+  id           String         @id @default(uuid())
+  companyId    String
+  createdById  String
+  title        String
+  description  String
+  contractType String
+  city         String?
+  country      String?
+  remote       Boolean        @default(false)
+  salaryMin    Int?
+  salaryMax    Int?
+  status       JobOfferStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy    User          @relation(fields: [createdById], references: [id])
+  applications Application[]
+
+  @@index([companyId])
+  @@index([createdById])
+  @@index([status])
+}
+
+// ============================================================
+// CANDIDATE
+// ============================================================
+
+model Candidate {
+  id          String  @id @default(uuid())
+  firstname   String
+  lastname    String
+  email       String  @unique
+  phone       String?
+  linkedinUrl String?
+  postCode    String?
+  address     String?
+  city        String?
+  country     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //Relations
+  applications Application[]
+
+  @@index([email])
+  @@index([lastname, firstname])
+}
+
+// ============================================================
+// APPLICATION
+// ============================================================
+
+model Application {
+  id          String @id @default(uuid())
+  candidateId String
+  jobOfferId  String
+  stageId     String
+
+  appliedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //Relation
+  jobOffer  JobOffer      @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
+  candidate Candidate     @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  stage     PipelineStage @relation(fields: [stageId], references: [id])
+
+  interviews Interview[]
+  notes      Note[]
+  documents  Document[]
+
+  @@index([candidateId])
+  @@index([jobOfferId])
+  @@index([stageId])
+}
+
+// ============================================================
+// INTERVIEW
+// ============================================================
+
+model Interview {
+  id            String          @id @default(uuid())
+  applicationId String
+  interviewerId String
+  scheduledAt   DateTime
+  duration      Int?
+  location      String?
+  meetingUrl    String?
+  status        InterviewStatus @default(PLANNED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //Relation
+  interviewer User        @relation(fields: [interviewerId], references: [id])
+  application Application @relation(fields: [applicationId], references: [id])
+
+  @@index([applicationId])
+  @@index([interviewerId])
+  @@index([scheduledAt])
+}
+
+// ============================================================
+// NOTE
+// ============================================================
+
+model Note {
+  id            String @id @default(uuid())
+  authorId      String
+  applicationId String
+
+  //Relation
+  author      User        @relation(fields: [authorId], references: [id])
+  application Application @relation(fields: [applicationId], references: [id])
+
+  @@index([applicationId])
+  @@index([authorId])
+}
+
+// ============================================================
+// DOCUMENT
+// ============================================================
+
+model Document {
+  id            String       @id @default(uuid())
+  applicationId String
+  filename      String
+  fileUrl       String
+  type          DocumentType
+  createdAt     DateTime     @default(now())
+
+  //Relation
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+}
+
+// ============================================================
+// NOTIFICATION
+// ============================================================
+
+model Notification {
+  id      String  @id @default(uuid())
+  userId  String
+  title   String
+  content String
+  isRead  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  //Relation
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isRead])
+}
+
+model PipelineStage {
+  id        String  @id @default(uuid())
+  companyId String
+  name      String
+  position  Int
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //Relation
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  applications Application[]
+
+  @@unique([companyId, position])
+  @@unique([companyId, name])
+  @@index([companyId])
+}
